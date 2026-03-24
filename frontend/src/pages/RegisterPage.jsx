@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { useStore } from '../store/useStore';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setToken = useStore((s) => s.setToken);
   const setFarmer = useStore((s) => s.setFarmer);
 
-  const [step, setStep] = useState('phone'); 
-  const [phone, setPhone] = useState('');
+  const prefilledPhone = location.state?.phone || '';
+  const [step, setStep] = useState(prefilledPhone ? 'otp' : 'phone');
+  const [phone, setPhone] = useState(prefilledPhone);
   const [otp, setOtp] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,13 +39,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await client.post('/auth/verify-otp', { phone, otp, name: '' });
-      if (res.data.is_new_user) {
-        navigate('/register', { state: { phone } });
+      if (!res.data.is_new_user) {
+        setError('An account already exists for this phone. Please log in.');
         return;
       }
-      setFarmer(res.data.user);
-      setToken(res.data.access_token);
-      navigate('/');
+      setStep('profile');
     } catch {
       setError('Invalid code. Try again.');
     } finally {
@@ -50,12 +51,20 @@ export default function LoginPage() {
     }
   }
 
-  async function handleResend() {
-    if (!phone.trim()) return;
+  async function handleCreateAccount(e) {
+    e.preventDefault();
+    if (!name.trim()) return setError('Enter your name.');
+    setError('');
+    setLoading(true);
     try {
-      await client.post('/auth/request-otp', { phone: phone.trim() });
+      const res = await client.post('/auth/verify-otp', { phone, otp, name: name.trim() });
+      setFarmer(res.data.user);
+      setToken(res.data.access_token);
+      navigate('/');
     } catch {
-      setError('Could not resend code right now.');
+      setError('Could not create account. Try again.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -64,7 +73,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-semibold text-primary">AgriBridge</h1>
-          <p className="text-gray-400 text-sm mt-2">Sign in to your account</p>
+          <p className="text-gray-400 text-sm mt-2">Create your account</p>
         </div>
 
         {step === 'phone' && (
@@ -109,16 +118,32 @@ export default function LoginPage() {
             </div>
             {error && <p className="text-red-500 text-xs">{error}</p>}
             <button type="submit" className="btn-primary" disabled={loading || otp.length !== 6}>
-              {loading ? 'Verifying...' : 'Log in'}
+              {loading ? 'Checking...' : 'Continue'}
             </button>
-            <button type="button" className="w-full text-sm text-primary text-center" onClick={handleResend}>
-              Resend code
+          </form>
+        )}
+
+        {step === 'profile' && (
+          <form onSubmit={handleCreateAccount} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Your name</label>
+              <input
+                className="input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Uwimana Marie"
+                autoFocus
+              />
+            </div>
+            {error && <p className="text-red-500 text-xs">{error}</p>}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Creating...' : 'Create account'}
             </button>
           </form>
         )}
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          New here? <Link to="/register" className="text-primary font-medium">Create account</Link>
+          Already have an account? <Link to="/login" className="text-primary font-medium">Log in</Link>
         </p>
       </div>
     </div>

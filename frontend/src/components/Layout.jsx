@@ -2,15 +2,16 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 
 const NAV = [
-  { to: '/',       label: 'Home',   icon: '⌂' },
-  { to: '/crops',  label: 'Crops',  icon: '🌱' },
-  { to: '/market', label: 'Market', icon: '📊' },
-  { to: '/record', label: 'Record', icon: '📝' },
+  { to: '/', label: 'Home', icon: 'H' },
+  { to: '/farms', label: 'Farms', icon: 'F' },
+  { to: '/crops', label: 'Crops', icon: 'C' },
+  { to: '/market', label: 'Market', icon: 'M' },
+  { to: '/record', label: 'Record', icon: 'R' },
 ];
 
 export default function Layout() {
-  const farmer   = useStore((s) => s.farmer);
-  const logout   = useStore((s) => s.logout);
+  const farmer = useStore((s) => s.farmer);
+  const logout = useStore((s) => s.logout);
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -20,7 +21,6 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-
       <nav className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
         <span className="text-primary font-semibold text-lg tracking-tight">AgriBridge</span>
 
@@ -44,9 +44,7 @@ export default function Layout() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500 hidden sm:block">
-            {farmer?.name?.split(' ')[0]}
-          </span>
+          <span className="text-sm text-gray-500 hidden sm:block">{farmer?.name?.split(' ')[0]}</span>
           <button
             onClick={handleLogout}
             className="text-sm text-gray-400 hover:text-gray-700 transition-colors"
@@ -77,7 +75,6 @@ export default function Layout() {
           </NavLink>
         ))}
       </nav>
-
     </div>
   );
 }
