@@ -3,8 +3,14 @@ import { Link } from 'react-router-dom';
 import CropStatusBadge from '../components/CropStatusBadge';
 import { useStore } from '../store/useStore';
 import client from '../api/client';
+import { CropsIcon } from '../components/AppIcon';
 
 const CROP_TYPES = ['maize', 'beans', 'sorghum', 'irish_potato', 'sweet_potato', 'cassava', 'vegetables', 'other'];
+const CROP_STATUSES = [
+  { value: 'seedling', label: 'Planting / Seedling' },
+  { value: 'growing', label: 'Growing' },
+  { value: 'harvested', label: 'Harvesting' },
+];
 const ICONS = { maize: 'M', beans: 'B', sorghum: 'S', irish_potato: 'P', sweet_potato: 'SP', cassava: 'C', vegetables: 'V' };
 
 export default function CropsPage() {
@@ -19,6 +25,7 @@ export default function CropsPage() {
   const [error, setError] = useState('');
 
   const [cropType, setCropType] = useState('maize');
+  const [cropStatus, setCropStatus] = useState('seedling');
   const [plotName, setPlotName] = useState('');
   const [areaHa, setAreaHa] = useState('');
   const [plantedAt, setPlantedAt] = useState(new Date().toISOString().split('T')[0]);
@@ -45,6 +52,7 @@ export default function CropsPage() {
       const res = await client.post('/crops', {
         farm_id: farms[0].id,
         crop_type: cropType,
+        status: cropStatus,
         plot_name: plotName || undefined,
         area_ha: areaHa ? parseFloat(areaHa) : undefined,
         planted_at: plantedAt ? new Date(plantedAt).toISOString() : undefined,
@@ -53,6 +61,7 @@ export default function CropsPage() {
       setShowForm(false);
       setPlotName('');
       setAreaHa('');
+      setCropStatus('seedling');
     } catch {
       setError('Failed to save. Check your connection.');
     } finally {
@@ -62,8 +71,18 @@ export default function CropsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-800">My crops</h1>
+      <div className="card bg-gradient-to-r from-emerald-50 via-white to-amber-50 border-emerald-100">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+              <CropsIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-800">My crops</h1>
+              <p className="text-sm text-gray-500 mt-1">Track what is planted, where it is growing, and what needs attention.</p>
+            </div>
+          </div>
+          <div className="pt-0.5">
         {hasFarms ? (
           <button onClick={() => setShowForm(!showForm)} className="text-sm font-medium text-primary hover:underline">
             {showForm ? 'Cancel' : '+ Add crop'}
@@ -73,6 +92,8 @@ export default function CropsPage() {
             + Register farm
           </Link>
         )}
+          </div>
+        </div>
       </div>
 
       {!hasFarms && !loading && (
@@ -116,6 +137,22 @@ export default function CropsPage() {
           </div>
 
           <div>
+            <label className="block text-xs font-medium text-gray-500 mb-2">Crop stage</label>
+            <div className="flex flex-wrap gap-2">
+              {CROP_STATUSES.map((status) => (
+                <button
+                  key={status.value}
+                  type="button"
+                  onClick={() => setCropStatus(status.value)}
+                  className={`pill text-xs ${cropStatus === status.value ? 'pill-active' : ''}`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Planting date</label>
             <input className="input text-sm" type="date" value={plantedAt} onChange={(e) => setPlantedAt(e.target.value)} />
           </div>
@@ -141,7 +178,9 @@ export default function CropsPage() {
         </div>
       ) : crops.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-4xl mb-3">C</p>
+          <div className="w-14 h-14 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+            <CropsIcon className="h-7 w-7" />
+          </div>
           <p className="text-gray-500 text-sm">No crops yet.</p>
           {hasFarms ? (
             <button onClick={() => setShowForm(true)} className="text-primary text-sm mt-2 hover:underline">

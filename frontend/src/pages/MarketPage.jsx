@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
+import { MarketIcon } from '../components/AppIcon';
 
 const ICONS = {
   maize: 'M',
@@ -81,9 +82,16 @@ export default function MarketPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-800">Market prices</h1>
-        <p className="text-xs text-gray-400 mt-0.5">RWF per kg</p>
+      <div className="card bg-gradient-to-r from-amber-50 via-white to-orange-50 border-amber-100">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm">
+            <MarketIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-800">Market prices</h1>
+            <p className="text-sm text-gray-500 mt-1">Check district prices and compare where crops are moving best.</p>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
@@ -115,7 +123,7 @@ export default function MarketPage() {
         <div className="space-y-2">
           {prices.map((p) => (
             <div key={p.id} className="card flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-xs font-semibold flex-shrink-0">
+              <div className="w-10 h-10 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center text-xs font-semibold flex-shrink-0">
                 {ICONS[p.crop_type] || 'P'}
               </div>
               <div className="flex-1 min-w-0">

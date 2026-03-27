@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import AlertCard from '../components/AlertCard';
+import { AlertIcon, CropsIcon, FarmsIcon, HomeIcon } from '../components/AppIcon';
 import { useStore } from '../store/useStore';
 import client from '../api/client';
 
@@ -7,82 +8,66 @@ function formatCropName(cropType) {
   return cropType.replace(/_/g, ' ');
 }
 
-function extractNumericQuantity(quantity) {
-  if (!quantity) return null;
-  const match = String(quantity).match(/(\d+(?:\.\d+)?)/);
-  return match ? Number(match[1]) : null;
+function getSeasonCounts(crops) {
+  return crops.reduce((summary, crop) => {
+    const status = crop.status === 'seedling' ? 'planting' : crop.status;
+
+    if (status === 'planting' || status === 'growing' || status === 'harvested') {
+      summary[status] += 1;
+    }
+
+    return summary;
+  }, { planting: 0, growing: 0, harvested: 0 });
 }
 
-function buildDemandAlert(prices, district, farmerCrops) {
-  if (!prices.length) return null;
+function getSeasonStatusSummary(crops) {
+  const counts = getSeasonCounts(crops);
+  return `P ${counts.planting} | G ${counts.growing} | H ${counts.harvested}`;
+}
 
-  const topCrop = [...prices].sort((a, b) => b.price_rwf - a.price_rwf)[0];
-  const farmerAlreadyGrowsIt = farmerCrops.some((crop) => crop.crop_type === topCrop.crop_type);
+function getCropBreakdown(crops) {
+  const grouped = crops.reduce((map, crop) => {
+    const key = crop.crop_type;
 
-  return {
-    id: `market-demand-${district}-${topCrop.crop_type}`,
-    type: 'market',
-    title: `${formatCropName(topCrop.crop_type)} is high in demand in ${district}`,
-    body: farmerAlreadyGrowsIt
-      ? `This is the strongest-priced crop in your area at ${topCrop.price_rwf} RWF/kg in ${topCrop.market_name}. It may be a good time to plan sales.`
-      : `It currently leads local prices at ${topCrop.price_rwf} RWF/kg in ${topCrop.market_name}. You can use this as a guide for future planting decisions.`,
-  };
+    if (!map[key]) {
+      map[key] = { cropType: key, count: 0, area: 0 };
+    }
+
+    map[key].count += 1;
+    map[key].area += crop.area_ha || 0;
+    return map;
+  }, {});
+
+  return Object.values(grouped)
+    .sort((a, b) => b.area - a.area || b.count - a.count)
+    .slice(0, 5);
 }
 
 export default function HomePage() {
-  const farmer   = useStore((s) => s.farmer);
-  const farms    = useStore((s) => s.farms);
-  const crops    = useStore((s) => s.crops);
+  const farmer = useStore((s) => s.farmer);
+  const farms = useStore((s) => s.farms);
+  const crops = useStore((s) => s.crops);
   const setFarms = useStore((s) => s.setFarms);
   const setCrops = useStore((s) => s.setCrops);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
-  const [demandInsight, setDemandInsight] = useState(null);
-  const [harvestSummary, setHarvestSummary] = useState({ count: 0, yieldTotal: 0, yieldUnit: 'kg' });
 
   useEffect(() => {
-    Promise.allSettled([
-      client.get('/farms'),
-      client.get('/crops'),
-      client.get('/activities'),
-      client.get('/alerts'),
-      client.get('/market'),
-    ])
-      .then(([farmsResult, cropsResult, activitiesResult, alertsResult, marketResult]) => {
-        let nextFarms = [];
-        let nextCrops = [];
+    Promise.allSettled([client.get('/farms'), client.get('/crops'), client.get('/alerts')])
+      .then(([farmsResult, cropsResult, alertsResult]) => {
         let nextAlerts = [];
 
         if (farmsResult.status === 'fulfilled') {
-          nextFarms = farmsResult.value.data || [];
-          setFarms(nextFarms);
+          setFarms(farmsResult.value.data || []);
         } else {
           console.warn(farmsResult.reason);
         }
 
         if (cropsResult.status === 'fulfilled') {
-          nextCrops = cropsResult.value.data || [];
-          setCrops(nextCrops);
+          setCrops(cropsResult.value.data || []);
         } else {
           console.warn(cropsResult.reason);
-        }
-
-        if (activitiesResult.status === 'fulfilled') {
-          const activities = activitiesResult.value.data || [];
-          const harvestActivities = activities.filter((activity) => activity.activity_type === 'harvest');
-          const numericHarvestValues = harvestActivities
-            .map((activity) => extractNumericQuantity(activity.quantity))
-            .filter((value) => value !== null);
-
-          setHarvestSummary({
-            count: harvestActivities.length,
-            yieldTotal: numericHarvestValues.reduce((sum, value) => sum + value, 0),
-            yieldUnit: 'kg',
-          });
-        } else {
-          console.warn(activitiesResult.reason);
-          setHarvestSummary({ count: 0, yieldTotal: 0, yieldUnit: 'kg' });
         }
 
         if (alertsResult.status === 'fulfilled') {
@@ -91,55 +76,48 @@ export default function HomePage() {
           console.warn(alertsResult.reason);
         }
 
-        if (marketResult.status === 'fulfilled') {
-          const locationName = nextFarms[0]?.district || farmer?.district || 'Kigali';
-          const marketPrices = (marketResult.value.data || []).filter((price) =>
-            !locationName || price.district?.toLowerCase() === locationName.toLowerCase()
-          );
-          const topCrop = marketPrices.length
-            ? [...marketPrices].sort((a, b) => b.price_rwf - a.price_rwf)[0]
-            : null;
-          const demandAlert = buildDemandAlert(marketPrices, locationName, nextCrops);
-
-          setDemandInsight(topCrop ? {
-            crop: formatCropName(topCrop.crop_type),
-            price: topCrop.price_rwf,
-            district: locationName,
-          } : null);
-          setAlerts(demandAlert ? [...nextAlerts, demandAlert] : nextAlerts);
-        } else {
-          console.warn(marketResult.reason);
-          setDemandInsight(null);
-          setAlerts(nextAlerts);
-        }
+        setAlerts(nextAlerts);
       })
       .finally(() => {
         setLoading(false);
         setAlertsLoading(false);
       });
-  }, [farmer?.district, setCrops, setFarms]);
+  }, [setCrops, setFarms]);
 
-  const firstName  = farmer?.name?.split(' ')[0] || 'Farmer';
+  const firstName = farmer?.name?.split(' ')[0] || 'Farmer';
+  const totalPlots = crops.length;
+  const plantedArea = crops.reduce((sum, crop) => sum + (crop.area_ha || 0), 0);
+  const cropTypes = new Set(crops.map((crop) => crop.crop_type)).size;
+  const seasonStatus = getSeasonStatusSummary(crops);
+  const seasonCounts = getSeasonCounts(crops);
+  const cropBreakdown = getCropBreakdown(crops);
+  const maxCropArea = Math.max(...cropBreakdown.map((crop) => crop.area), 1);
 
   return (
     <div className="space-y-6">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-400">Muraho, {firstName}</p>
-          <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-primary font-semibold">
-          {firstName.charAt(0).toUpperCase()}
+      <div className="card bg-gradient-to-r from-emerald-50 via-white to-sky-50 border-emerald-100">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+              <HomeIcon className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Muraho, {firstName}</p>
+              <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+              <p className="text-sm text-gray-500 mt-1">A quick view of your farms, crops, season progress, and alerts.</p>
+            </div>
+          </div>
+          <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-primary font-semibold flex-shrink-0">
+            {firstName.charAt(0).toUpperCase()}
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
       {loading ? (
         <div className="grid grid-cols-3 gap-3">
-          {[1,2,3].map((i) => (
+          {[1, 2, 3].map((i) => (
             <div key={i} className="card animate-pulse">
+              <div className="w-10 h-10 bg-gray-100 rounded-2xl mb-3" />
               <div className="h-3 bg-gray-100 rounded mb-2 w-2/3" />
               <div className="h-6 bg-gray-100 rounded w-1/2" />
             </div>
@@ -148,32 +126,115 @@ export default function HomePage() {
       ) : (
         <div className="grid grid-cols-3 gap-3">
           <div className="card">
-            <p className="text-xs text-gray-400 mb-1">High in demand</p>
-            <p className="text-base font-semibold text-gray-800 capitalize">
-              {demandInsight?.crop || 'No data'}
-            </p>
-            <p className="text-xs text-gray-400">
-              {demandInsight?.price ? `${demandInsight.price} RWF/kg` : 'Market data unavailable'}
-            </p>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">
+              <FarmsIcon className="h-5 w-5" />
+            </div>
+            <p className="text-xs text-gray-400 mb-1">Farms / plots</p>
+            <p className="text-xl font-semibold text-gray-800">{farms.length} / {totalPlots}</p>
+            <p className="text-xs text-gray-400">Total registered fields</p>
           </div>
           <div className="card">
-            <p className="text-xs text-gray-400 mb-1">Harvests</p>
-            <p className="text-xl font-semibold text-gray-800">{harvestSummary.count}</p>
-            <p className="text-xs text-gray-400">Recorded harvest events</p>
+            <div className="w-10 h-10 rounded-2xl bg-lime-50 text-lime-700 flex items-center justify-center mb-3">
+              <CropsIcon className="h-5 w-5" />
+            </div>
+            <p className="text-xs text-gray-400 mb-1">Crops planted</p>
+            <p className="text-xl font-semibold text-gray-800">{cropTypes}</p>
+            <p className="text-xs text-gray-400">{plantedArea.toFixed(1)} ha under crops</p>
           </div>
           <div className="card">
-            <p className="text-xs text-gray-400 mb-1">Yield</p>
-            <p className="text-xl font-semibold text-gray-800">
-              {harvestSummary.yieldTotal.toFixed(1)}
-            </p>
-            <p className="text-xs text-gray-400">{harvestSummary.yieldUnit} from logged harvests</p>
+            <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center mb-3">
+              <AlertIcon className="h-5 w-5" />
+            </div>
+            <p className="text-xs text-gray-400 mb-1">Season status</p>
+            <p className="text-base font-semibold text-gray-800">{seasonStatus}</p>
+            <p className="text-xs text-gray-400">Planting, growing, harvesting</p>
           </div>
         </div>
       )}
 
-      {/* Advisories */}
+      {!loading && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-2xl bg-lime-50 text-lime-700 flex items-center justify-center">
+                <CropsIcon className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Crop coverage</p>
+                <p className="text-xs text-gray-400">Top planted crops by acreage</p>
+              </div>
+            </div>
+
+            {cropBreakdown.length ? (
+              <div className="space-y-3">
+                {cropBreakdown.map((crop) => (
+                  <div key={crop.cropType}>
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="text-gray-600 capitalize">{formatCropName(crop.cropType)}</span>
+                      <span className="text-gray-400">{crop.area.toFixed(1)} ha</span>
+                    </div>
+                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-lime-500 to-emerald-500"
+                        style={{ width: `${Math.max((crop.area / maxCropArea) * 100, crop.area > 0 ? 14 : 6)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Add crops to see your planted-area breakdown.</p>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center">
+                <AlertIcon className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Season flow</p>
+                <p className="text-xs text-gray-400">How your plots are moving this season</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { key: 'planting', label: 'Planting', value: seasonCounts.planting, tone: 'from-amber-400 to-orange-500' },
+                { key: 'growing', label: 'Growing', value: seasonCounts.growing, tone: 'from-emerald-400 to-green-600' },
+                { key: 'harvested', label: 'Harvesting', value: seasonCounts.harvested, tone: 'from-sky-400 to-blue-600' },
+              ].map((item) => {
+                const total = Math.max(totalPlots, 1);
+                const height = Math.max((item.value / total) * 100, item.value > 0 ? 20 : 8);
+
+                return (
+                  <div key={item.key} className="text-center">
+                    <div className="h-32 bg-gray-50 rounded-2xl flex items-end justify-center px-3 py-3 mb-2">
+                      <div
+                        className={`w-full rounded-xl bg-gradient-to-t ${item.tone} transition-all`}
+                        style={{ height: `${height}%` }}
+                      />
+                    </div>
+                    <p className="text-lg font-semibold text-gray-800">{item.value}</p>
+                    <p className="text-xs text-gray-400">{item.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
-        <p className="section-label">Today's alerts</p>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
+            <AlertIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="section-label !mb-0">Today's alerts</p>
+            <p className="text-xs text-gray-400">Weather updates and farm advisories</p>
+          </div>
+        </div>
         {alertsLoading ? (
           <div className="card animate-pulse">
             <div className="h-5 bg-gray-100 rounded mb-3 w-1/3" />
@@ -192,7 +253,6 @@ export default function HomePage() {
           />
         )}
       </div>
-
     </div>
   );
 }

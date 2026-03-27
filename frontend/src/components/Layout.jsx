@@ -1,12 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { CropsIcon, FarmsIcon, HomeIcon, MarketIcon, RecordIcon } from './AppIcon';
 
 const NAV = [
-  { to: '/', label: 'Home', icon: 'H' },
-  { to: '/farms', label: 'Farms', icon: 'F' },
-  { to: '/crops', label: 'Crops', icon: 'C' },
-  { to: '/market', label: 'Market', icon: 'M' },
-  { to: '/record', label: 'Record', icon: 'R' },
+  { to: '/', label: 'Home', icon: HomeIcon },
+  { to: '/farms', label: 'Farms', icon: FarmsIcon },
+  { to: '/crops', label: 'Crops', icon: CropsIcon },
+  { to: '/market', label: 'Market', icon: MarketIcon },
+  { to: '/record', label: 'Record', icon: RecordIcon },
 ];
 
 export default function Layout() {
@@ -31,13 +32,14 @@ export default function Layout() {
               to={n.to}
               end={n.to === '/'}
               className={({ isActive }) =>
-                `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                `px-4 py-2 rounded-xl text-sm font-medium transition-colors inline-flex items-center gap-2 ${
                   isActive
                     ? 'bg-primary/10 text-primary'
                     : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
                 }`
               }
             >
+              <n.icon className="h-4 w-4" />
               {n.label}
             </NavLink>
           ))}
@@ -70,7 +72,7 @@ export default function Layout() {
               }`
             }
           >
-            <span className="text-lg leading-none mb-0.5">{n.icon}</span>
+            <n.icon className="h-5 w-5 mb-0.5" />
             {n.label}
           </NavLink>
         ))}

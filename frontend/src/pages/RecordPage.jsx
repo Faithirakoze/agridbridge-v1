@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import client from '../api/client';
+import { RecordIcon } from '../components/AppIcon';
 
 const ACTIVITY_TYPES = ['planting','fertiliser_applied','pesticide_applied','weeding','irrigation','harvest','other'];
 
@@ -51,7 +52,17 @@ export default function RecordPage() {
   return (
     <div className="space-y-5">
 
-      <h1 className="text-xl font-semibold text-gray-800">Log activity</h1>
+      <div className="card bg-gradient-to-r from-sky-50 via-white to-emerald-50 border-sky-100">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-sm">
+            <RecordIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-800">Log activity</h1>
+            <p className="text-sm text-gray-500 mt-1">Keep a simple record of planting, irrigation, weeding, and harvest work.</p>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
 

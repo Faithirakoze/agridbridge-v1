@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import { useStore } from '../store/useStore';
+import { FarmsIcon } from '../components/AppIcon';
 
 export default function FarmsPage() {
   const farms = useStore((s) => s.farms);
@@ -47,9 +48,16 @@ export default function FarmsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-800">My farms</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Register at least one farm before adding crops.</p>
+      <div className="card bg-gradient-to-r from-emerald-50 via-white to-lime-50 border-emerald-100">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+            <FarmsIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-800">My farms</h1>
+            <p className="text-sm text-gray-500 mt-1">Register at least one farm before adding crops.</p>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="card space-y-4 border-primary/30">
@@ -106,16 +114,24 @@ export default function FarmsPage() {
         </div>
       ) : farms.length === 0 ? (
         <div className="card text-sm text-gray-500 text-center py-8">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+            <FarmsIcon className="h-6 w-6" />
+          </div>
           No farms registered yet.
         </div>
       ) : (
         <div className="space-y-2">
           {farms.map((farm) => (
-            <div key={farm.id} className="card">
-              <p className="text-sm font-medium text-gray-800">{farm.name}</p>
-              <p className="text-xs text-gray-400">
-                {farm.area_ha} ha {farm.district ? `- ${farm.district}` : ''}
-              </p>
+            <div key={farm.id} className="card flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                <FarmsIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800">{farm.name}</p>
+                <p className="text-xs text-gray-400">
+                  {farm.area_ha} ha {farm.district ? `- ${farm.district}` : ''}
+                </p>
+              </div>
             </div>
           ))}
         </div>
