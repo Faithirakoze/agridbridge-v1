@@ -20,18 +20,18 @@ services:
 
   api:
     build:
-      context: ./agribridge/backend
+      context: ./backend
       dockerfile: Dockerfile
     container_name: agribridge_api
     restart: unless-stopped
     env_file:
-      - ./agribridge/backend/.env
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     ports:
       - "8000:8000"
     volumes:
-      - ./agribridge/backend:/app
+      - ./backend:/app
     depends_on:
       db:
         condition: service_healthy

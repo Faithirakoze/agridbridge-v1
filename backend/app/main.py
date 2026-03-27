@@ -1,8 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, farms, crops, activities, market
+from app.api import activities, alerts, auth, crops, farms, market
+from app.db.session import Base, engine
+from app import models  # noqa: F401  # Ensure model metadata is registered
 
 app = FastAPI(title="AgriBridge API", version="1.0.0", docs_url="/docs")
+
+
+@app.on_event("startup")
+def init_db():
+    # Dev bootstrap: create tables if they do not exist yet.
+    # (Project has Alembic config but no version scripts committed.)
+    Base.metadata.create_all(bind=engine)
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -11,6 +20,7 @@ app.include_router(farms.router,      prefix="/api/v1/farms",      tags=["farms"
 app.include_router(crops.router,      prefix="/api/v1/crops",      tags=["crops"])
 app.include_router(activities.router, prefix="/api/v1/activities", tags=["activities"])
 app.include_router(market.router,     prefix="/api/v1/market",     tags=["market"])
+app.include_router(alerts.router,     prefix="/api/v1/alerts",     tags=["alerts"])
 
 @app.get("/health", tags=["health"])
 def health():
