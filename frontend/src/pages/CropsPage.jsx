@@ -22,6 +22,7 @@ export default function CropsPage() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState('');
   const [error, setError] = useState('');
 
   const [cropType, setCropType] = useState('maize');
@@ -29,6 +30,15 @@ export default function CropsPage() {
   const [plotName, setPlotName] = useState('');
   const [areaHa, setAreaHa] = useState('');
   const [plantedAt, setPlantedAt] = useState(new Date().toISOString().split('T')[0]);
+  const [editingCropId, setEditingCropId] = useState('');
+  const [cropDraft, setCropDraft] = useState({
+    farm_id: '',
+    crop_type: 'maize',
+    plot_name: '',
+    area_ha: '',
+    planted_at: '',
+    status: 'seedling',
+  });
 
   useEffect(() => {
     Promise.all([client.get('/crops'), client.get('/farms')])
@@ -66,6 +76,57 @@ export default function CropsPage() {
       setError('Failed to save. Check your connection.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  function startEdit(crop) {
+    setEditingCropId(crop.id);
+    setCropDraft({
+      farm_id: crop.farm_id,
+      crop_type: crop.crop_type || 'maize',
+      plot_name: crop.plot_name || '',
+      area_ha: crop.area_ha?.toString() || '',
+      planted_at: crop.planted_at ? new Date(crop.planted_at).toISOString().split('T')[0] : '',
+      status: crop.status || 'seedling',
+    });
+  }
+
+  async function saveCrop(cropIdToSave) {
+    if (!cropDraft.farm_id) return setError('Select a farm for the crop.');
+
+    setError('');
+    setActionLoading(`save-${cropIdToSave}`);
+    try {
+      const res = await client.put(`/crops/${cropIdToSave}`, {
+        farm_id: cropDraft.farm_id,
+        crop_type: cropDraft.crop_type,
+        plot_name: cropDraft.plot_name.trim() || undefined,
+        area_ha: cropDraft.area_ha ? parseFloat(cropDraft.area_ha) : undefined,
+        planted_at: cropDraft.planted_at ? new Date(cropDraft.planted_at).toISOString() : undefined,
+        status: cropDraft.status,
+      });
+      setCrops(crops.map((crop) => (crop.id === cropIdToSave ? res.data : crop)));
+      setEditingCropId('');
+    } catch {
+      setError('Failed to update crop. Check your connection.');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function deleteCrop(crop) {
+    if (!window.confirm(`Delete ${crop.crop_type.replace('_', ' ')}${crop.plot_name ? ` - ${crop.plot_name}` : ''}?`)) return;
+
+    setError('');
+    setActionLoading(`delete-${crop.id}`);
+    try {
+      await client.delete(`/crops/${crop.id}`);
+      setCrops(crops.filter((item) => item.id !== crop.id));
+      if (editingCropId === crop.id) setEditingCropId('');
+    } catch {
+      setError('Failed to delete crop. Check your connection.');
+    } finally {
+      setActionLoading('');
     }
   }
 
@@ -195,21 +256,97 @@ export default function CropsPage() {
       ) : (
         <div className="space-y-2">
           {crops.map((crop) => (
-            <div key={crop.id} className="card flex items-center gap-3">
+            <div key={crop.id} className="card flex items-start gap-3">
               <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-sm font-semibold flex-shrink-0">
                 {ICONS[crop.crop_type] || 'C'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 capitalize">{crop.crop_type.replace('_', ' ')}</p>
-                <p className="text-xs text-gray-400">
-                  {crop.plot_name ? `${crop.plot_name} - ` : ''}
-                  {crop.area_ha ? `${crop.area_ha} ha - ` : ''}
-                  {crop.planted_at
-                    ? `Planted ${new Date(crop.planted_at).toLocaleDateString('en-RW', { day: 'numeric', month: 'short' })}`
-                    : ''}
-                </p>
+                {editingCropId === crop.id ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        className="input text-sm"
+                        value={cropDraft.farm_id}
+                        onChange={(e) => setCropDraft({ ...cropDraft, farm_id: e.target.value })}
+                      >
+                        {farms.map((farm) => (
+                          <option key={farm.id} value={farm.id}>{farm.name}</option>
+                        ))}
+                      </select>
+                      <select
+                        className="input text-sm"
+                        value={cropDraft.crop_type}
+                        onChange={(e) => setCropDraft({ ...cropDraft, crop_type: e.target.value })}
+                      >
+                        {CROP_TYPES.map((type) => (
+                          <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className="input text-sm"
+                        value={cropDraft.plot_name}
+                        onChange={(e) => setCropDraft({ ...cropDraft, plot_name: e.target.value })}
+                        placeholder="Plot name"
+                      />
+                      <input
+                        className="input text-sm"
+                        value={cropDraft.area_ha}
+                        onChange={(e) => setCropDraft({ ...cropDraft, area_ha: e.target.value })}
+                        placeholder="Area (ha)"
+                        type="number"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className="input text-sm"
+                        type="date"
+                        value={cropDraft.planted_at}
+                        onChange={(e) => setCropDraft({ ...cropDraft, planted_at: e.target.value })}
+                      />
+                      <select
+                        className="input text-sm"
+                        value={cropDraft.status}
+                        onChange={(e) => setCropDraft({ ...cropDraft, status: e.target.value })}
+                      >
+                        {CROP_STATUSES.map((status) => (
+                          <option key={status.value} value={status.value}>{status.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-3 text-xs font-medium">
+                      <button type="button" className="text-primary hover:underline" onClick={() => saveCrop(crop.id)}>
+                        {actionLoading === `save-${crop.id}` ? 'Saving...' : 'Save'}
+                      </button>
+                      <button type="button" className="text-gray-500 hover:underline" onClick={() => setEditingCropId('')}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-gray-800 capitalize">{crop.crop_type.replace('_', ' ')}</p>
+                    <p className="text-xs text-gray-400">
+                      {crop.plot_name ? `${crop.plot_name} - ` : ''}
+                      {crop.area_ha ? `${crop.area_ha} ha - ` : ''}
+                      {crop.planted_at
+                        ? `Planted ${new Date(crop.planted_at).toLocaleDateString('en-RW', { day: 'numeric', month: 'short' })}`
+                        : ''}
+                    </p>
+                    <div className="flex gap-3 text-xs font-medium mt-2">
+                      <button type="button" className="text-primary hover:underline" onClick={() => startEdit(crop)}>
+                        Edit
+                      </button>
+                      <button type="button" className="text-red-500 hover:underline" onClick={() => deleteCrop(crop)}>
+                        {actionLoading === `delete-${crop.id}` ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
-              <CropStatusBadge status={crop.status} />
+              {editingCropId !== crop.id && <CropStatusBadge status={crop.status} />}
             </div>
           ))}
         </div>

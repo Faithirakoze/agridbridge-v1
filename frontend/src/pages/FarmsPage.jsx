@@ -9,10 +9,13 @@ export default function FarmsPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState('');
   const [error, setError] = useState('');
   const [name, setName] = useState('');
   const [areaHa, setAreaHa] = useState('');
   const [district, setDistrict] = useState('Kigali');
+  const [editingFarmId, setEditingFarmId] = useState('');
+  const [farmDraft, setFarmDraft] = useState({ name: '', area_ha: '', district: 'Kigali' });
 
   useEffect(() => {
     client
@@ -43,6 +46,52 @@ export default function FarmsPage() {
       setError('Could not register farm. Please try again.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  function startEdit(farm) {
+    setEditingFarmId(farm.id);
+    setFarmDraft({
+      name: farm.name || '',
+      area_ha: farm.area_ha?.toString() || '',
+      district: farm.district || 'Kigali',
+    });
+  }
+
+  async function saveFarm(farmId) {
+    if (!farmDraft.name.trim()) return setError('Enter a farm name.');
+    if (!farmDraft.area_ha || Number(farmDraft.area_ha) <= 0) return setError('Enter a valid area in hectares.');
+
+    setError('');
+    setActionLoading(`save-${farmId}`);
+    try {
+      const res = await client.put(`/farms/${farmId}`, {
+        name: farmDraft.name.trim(),
+        area_ha: parseFloat(farmDraft.area_ha),
+        district: farmDraft.district.trim() || 'Kigali',
+      });
+      setFarms(farms.map((farm) => (farm.id === farmId ? res.data : farm)));
+      setEditingFarmId('');
+    } catch {
+      setError('Could not update farm. Please try again.');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
+  async function deleteFarm(farm) {
+    if (!window.confirm(`Delete ${farm.name}? This will also remove its crops and activities.`)) return;
+
+    setError('');
+    setActionLoading(`delete-${farm.id}`);
+    try {
+      await client.delete(`/farms/${farm.id}`);
+      setFarms(farms.filter((item) => item.id !== farm.id));
+      if (editingFarmId === farm.id) setEditingFarmId('');
+    } catch {
+      setError('Could not delete farm. Please try again.');
+    } finally {
+      setActionLoading('');
     }
   }
 
@@ -122,15 +171,60 @@ export default function FarmsPage() {
       ) : (
         <div className="space-y-2">
           {farms.map((farm) => (
-            <div key={farm.id} className="card flex items-center gap-3">
+            <div key={farm.id} className="card flex items-start gap-3">
               <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
                 <FarmsIcon className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">{farm.name}</p>
-                <p className="text-xs text-gray-400">
-                  {farm.area_ha} ha {farm.district ? `- ${farm.district}` : ''}
-                </p>
+              <div className="flex-1 min-w-0">
+                {editingFarmId === farm.id ? (
+                  <div className="space-y-3">
+                    <input
+                      className="input text-sm"
+                      value={farmDraft.name}
+                      onChange={(e) => setFarmDraft({ ...farmDraft, name: e.target.value })}
+                      placeholder="Farm name"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className="input text-sm"
+                        value={farmDraft.area_ha}
+                        onChange={(e) => setFarmDraft({ ...farmDraft, area_ha: e.target.value })}
+                        placeholder="Area (ha)"
+                        type="number"
+                        step="0.1"
+                      />
+                      <input
+                        className="input text-sm"
+                        value={farmDraft.district}
+                        onChange={(e) => setFarmDraft({ ...farmDraft, district: e.target.value })}
+                        placeholder="District"
+                      />
+                    </div>
+                    <div className="flex gap-3 text-xs font-medium">
+                      <button type="button" className="text-primary hover:underline" onClick={() => saveFarm(farm.id)}>
+                        {actionLoading === `save-${farm.id}` ? 'Saving...' : 'Save'}
+                      </button>
+                      <button type="button" className="text-gray-500 hover:underline" onClick={() => setEditingFarmId('')}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-gray-800">{farm.name}</p>
+                    <p className="text-xs text-gray-400">
+                      {farm.area_ha} ha {farm.district ? `- ${farm.district}` : ''}
+                    </p>
+                    <div className="flex gap-3 text-xs font-medium mt-2">
+                      <button type="button" className="text-primary hover:underline" onClick={() => startEdit(farm)}>
+                        Edit
+                      </button>
+                      <button type="button" className="text-red-500 hover:underline" onClick={() => deleteFarm(farm)}>
+                        {actionLoading === `delete-${farm.id}` ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ))}
