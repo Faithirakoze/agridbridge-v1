@@ -14,6 +14,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  function getRequestErrorMessage(err, fallback) {
+    return err.code === 'ECONNABORTED'
+      ? 'The backend may be waking up on Render. Please wait about a minute and try again.'
+      : fallback;
+  }
+
   async function handleSendOTP(e) {
     e.preventDefault();
     if (!phone.trim()) return setError('Enter your phone number.');
@@ -22,8 +28,8 @@ export default function LoginPage() {
     try {
       await client.post('/auth/request-otp', { phone: phone.trim() });
       setStep('otp');
-    } catch {
-      setError('Could not send code. Is the backend running?');
+    } catch (err) {
+      setError(getRequestErrorMessage(err, 'Could not send code. Is the backend running?'));
     } finally {
       setLoading(false);
     }
@@ -43,8 +49,8 @@ export default function LoginPage() {
       setFarmer(res.data.user);
       setToken(res.data.access_token);
       navigate('/');
-    } catch {
-      setError('Invalid code. Try again.');
+    } catch (err) {
+      setError(getRequestErrorMessage(err, 'Invalid code. Try again.'));
     } finally {
       setLoading(false);
     }
@@ -54,8 +60,8 @@ export default function LoginPage() {
     if (!phone.trim()) return;
     try {
       await client.post('/auth/request-otp', { phone: phone.trim() });
-    } catch {
-      setError('Could not resend code right now.');
+    } catch (err) {
+      setError(getRequestErrorMessage(err, 'Could not resend code right now.'));
     }
   }
 

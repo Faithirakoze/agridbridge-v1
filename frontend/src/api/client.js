@@ -4,7 +4,8 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
 
 const client = axios.create({
     baseURL: apiBaseUrl ? `${apiBaseUrl}/api/v1` : '/api/v1',
-    timeout: 10000,
+    // Render free web services can take tens of seconds to wake up.
+    timeout: 70000,
     headers: { 'Content-Type': 'application/json' },
 });
 
