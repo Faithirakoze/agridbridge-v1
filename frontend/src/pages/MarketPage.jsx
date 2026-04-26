@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import { MarketIcon } from '../components/AppIcon';
+import { createTranslator, getCropTypeLabel } from '../i18n';
+import { useStore } from '../store/useStore';
 
 const ICONS = {
   maize: 'M',
@@ -50,6 +52,8 @@ function dedupePrices(list) {
 }
 
 export default function MarketPage() {
+  const language = useStore((s) => s.language);
+  const t = createTranslator(language);
   const [prices, setPrices] = useState([]);
   const [district, setDistrict] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -88,20 +92,20 @@ export default function MarketPage() {
             <MarketIcon className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">Market prices</h1>
-            <p className="text-sm text-gray-500 mt-1">Check district prices and compare where crops are moving best.</p>
+            <h1 className="text-xl font-semibold text-gray-800">{t('market_title')}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t('market_subtitle')}</p>
           </div>
         </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
-        {FILTERS.map((f) => (
+        {FILTERS.map((filter) => (
           <button
-            key={f}
-            onClick={() => setDistrict(f)}
-            className={`pill text-xs whitespace-nowrap flex-shrink-0 ${district === f ? 'pill-active' : ''}`}
+            key={filter}
+            onClick={() => setDistrict(filter)}
+            className={`pill text-xs whitespace-nowrap flex-shrink-0 ${district === filter ? 'pill-active' : ''}`}
           >
-            {f}
+            {filter === 'All' ? t('market_all') : filter}
           </button>
         ))}
       </div>
@@ -121,20 +125,20 @@ export default function MarketPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {prices.map((p) => (
-            <div key={p.id} className="card flex items-center gap-3">
+          {prices.map((price) => (
+            <div key={price.id} className="card flex items-center gap-3">
               <div className="w-10 h-10 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                {ICONS[p.crop_type] || 'P'}
+                {ICONS[price.crop_type] || 'P'}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 capitalize">
-                  {p.crop_type.replace('_', ' ')}
+                  {getCropTypeLabel(price.crop_type, language)}
                 </p>
-                <p className="text-xs text-gray-400">{p.market_name}</p>
+                <p className="text-xs text-gray-400">{price.market_name}</p>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-sm font-semibold text-gray-800">{p.price_rwf} RWF</p>
-                <p className="text-xs text-gray-400">{p.district}</p>
+                <p className="text-sm font-semibold text-gray-800">{price.price_rwf} RWF</p>
+                <p className="text-xs text-gray-400">{price.district}</p>
               </div>
             </div>
           ))}

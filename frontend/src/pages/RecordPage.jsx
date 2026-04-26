@@ -1,22 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useStore } from '../store/useStore';
 import client from '../api/client';
 import { RecordIcon } from '../components/AppIcon';
+import { createTranslator, formatLocalizedDate, getActivityTypeLabel, getCropTypeLabel } from '../i18n';
+import { useStore } from '../store/useStore';
 
 const ACTIVITY_TYPES = ['planting', 'fertiliser_applied', 'pesticide_applied', 'weeding', 'irrigation', 'harvest', 'other'];
 
-function formatActivityType(value) {
-  return value.replace(/_/g, ' ');
-}
-
-function formatCropLabel(crop) {
-  if (!crop) return 'Unknown crop';
-  return `${crop.crop_type.replace(/_/g, ' ')}${crop.plot_name ? ` - ${crop.plot_name}` : ''}`;
-}
-
 export default function RecordPage() {
+  const language = useStore((s) => s.language);
   const crops = useStore((s) => s.crops);
   const setCrops = useStore((s) => s.setCrops);
+  const t = createTranslator(language);
 
   const [activities, setActivities] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
@@ -51,7 +45,7 @@ export default function RecordPage() {
         }
 
         if (cropsResult.status !== 'fulfilled' || activitiesResult.status !== 'fulfilled') {
-          setError('Some records could not load. Try refreshing the page.');
+          setError(t('record_save_error'));
         }
       })
       .finally(() => setPageLoading(false));
@@ -67,6 +61,11 @@ export default function RecordPage() {
     }
   }, [cropId, crops]);
 
+  function formatCropLabel(crop) {
+    if (!crop) return t('record_unknown_crop');
+    return `${getCropTypeLabel(crop.crop_type, language)}${crop.plot_name ? ` - ${crop.plot_name}` : ''}`;
+  }
+
   function showSuccess(message) {
     setSuccess(message);
     setTimeout(() => setSuccess(''), 3000);
@@ -74,7 +73,7 @@ export default function RecordPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!cropId) return setError('Select a crop first.');
+    if (!cropId) return setError(t('record_select_crop'));
 
     setError('');
     setActionLoading('create-activity');
@@ -89,9 +88,9 @@ export default function RecordPage() {
       setActivities([res.data, ...activities]);
       setQuantity('');
       setNotes('');
-      showSuccess('Activity saved.');
+      showSuccess(t('record_saved'));
     } catch {
-      setError('Failed to save activity. Check your connection.');
+      setError(t('record_save_error'));
     } finally {
       setActionLoading('');
     }
@@ -109,8 +108,8 @@ export default function RecordPage() {
   }
 
   async function saveActivity(activityIdToSave) {
-    if (!activityDraft.crop_id) return setError('Select a crop for the activity.');
-    if (!activityDraft.activity_date) return setError('Choose an activity date.');
+    if (!activityDraft.crop_id) return setError(t('record_select_crop_for_activity'));
+    if (!activityDraft.activity_date) return setError(t('record_choose_date'));
 
     setError('');
     setActionLoading(`activity-save-${activityIdToSave}`);
@@ -128,16 +127,16 @@ export default function RecordPage() {
           .sort((a, b) => new Date(b.activity_date) - new Date(a.activity_date))
       );
       setEditingActivityId('');
-      showSuccess('Activity updated.');
+      showSuccess(t('record_updated'));
     } catch {
-      setError('Could not update the activity.');
+      setError(t('record_update_error'));
     } finally {
       setActionLoading('');
     }
   }
 
   async function deleteActivity(activity) {
-    if (!window.confirm(`Delete the ${formatActivityType(activity.activity_type)} record?`)) return;
+    if (!window.confirm(t('record_delete_confirm', { label: getActivityTypeLabel(activity.activity_type, language) }))) return;
 
     setError('');
     setActionLoading(`activity-delete-${activity.id}`);
@@ -145,9 +144,9 @@ export default function RecordPage() {
       await client.delete(`/activities/${activity.id}`);
       setActivities(activities.filter((item) => item.id !== activity.id));
       if (editingActivityId === activity.id) setEditingActivityId('');
-      showSuccess('Activity deleted.');
+      showSuccess(t('record_deleted'));
     } catch {
-      setError('Could not delete the activity.');
+      setError(t('record_delete_error'));
     } finally {
       setActionLoading('');
     }
@@ -161,22 +160,22 @@ export default function RecordPage() {
             <RecordIcon className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">Records and activity</h1>
-            <p className="text-sm text-gray-500 mt-1">Log new work and manage your activity records here.</p>
+            <h1 className="text-xl font-semibold text-gray-800">{t('record_title')}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t('record_subtitle')}</p>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="card space-y-5">
         <div>
-          <h2 className="text-sm font-medium text-gray-700">Log activity</h2>
-          <p className="text-xs text-gray-400 mt-1">Save planting, irrigation, weeding, and harvest work against a crop.</p>
+          <h2 className="text-sm font-medium text-gray-700">{t('record_log_title')}</h2>
+          <p className="text-xs text-gray-400 mt-1">{t('record_log_hint')}</p>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">Crop</label>
+          <label className="block text-xs font-medium text-gray-500 mb-2">{t('record_crop')}</label>
           {crops.length === 0 ? (
-            <p className="text-sm text-gray-400">No crops yet - add one in the Crops tab first.</p>
+            <p className="text-sm text-gray-400">{t('record_no_crops')}</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {crops.map((crop) => (
@@ -184,7 +183,7 @@ export default function RecordPage() {
                   key={crop.id}
                   type="button"
                   onClick={() => setCropId(crop.id)}
-                  className={`pill text-xs capitalize ${cropId === crop.id ? 'pill-active' : ''}`}
+                  className={`pill text-xs ${cropId === crop.id ? 'pill-active' : ''}`}
                 >
                   {formatCropLabel(crop)}
                 </button>
@@ -194,39 +193,39 @@ export default function RecordPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">Activity type</label>
+          <label className="block text-xs font-medium text-gray-500 mb-2">{t('record_activity_type')}</label>
           <div className="flex flex-wrap gap-2">
             {ACTIVITY_TYPES.map((type) => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setActivityType(type)}
-                className={`pill text-xs capitalize ${activityType === type ? 'pill-active' : ''}`}
+                className={`pill text-xs ${activityType === type ? 'pill-active' : ''}`}
               >
-                {formatActivityType(type)}
+                {getActivityTypeLabel(type, language)}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Date</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t('record_date')}</label>
           <input className="input text-sm" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Quantity (optional)</label>
-          <input className="input text-sm" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="e.g. 25 kg urea" />
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t('record_quantity_optional')}</label>
+          <input className="input text-sm" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder={t('record_quantity_placeholder')} />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Notes (optional)</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">{t('record_notes_optional')}</label>
           <textarea
             className="input text-sm resize-none"
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any observations..."
+            placeholder={t('record_notes_placeholder')}
           />
         </div>
 
@@ -234,7 +233,7 @@ export default function RecordPage() {
         {success && <p className="text-green-600 text-xs font-medium">{success}</p>}
 
         <button type="submit" className="btn-primary" disabled={actionLoading === 'create-activity' || crops.length === 0}>
-          {actionLoading === 'create-activity' ? 'Saving...' : 'Save activity'}
+          {actionLoading === 'create-activity' ? t('common_saving') : t('record_save')}
         </button>
       </form>
 
@@ -244,15 +243,15 @@ export default function RecordPage() {
             <RecordIcon className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-gray-800">Manage activities</h2>
-            <p className="text-xs text-gray-400">Update recent field work records.</p>
+            <h2 className="text-sm font-semibold text-gray-800">{t('record_manage_title')}</h2>
+            <p className="text-xs text-gray-400">{t('record_manage_hint')}</p>
           </div>
         </div>
 
         {pageLoading ? (
-          <p className="text-sm text-gray-400">Loading activities...</p>
+          <p className="text-sm text-gray-400">{t('record_loading')}</p>
         ) : activities.length === 0 ? (
-          <p className="text-sm text-gray-400">No activity records yet.</p>
+          <p className="text-sm text-gray-400">{t('record_none')}</p>
         ) : (
           <div className="space-y-3">
             {activities.map((activity) => {
@@ -278,7 +277,7 @@ export default function RecordPage() {
                           onChange={(e) => setActivityDraft({ ...activityDraft, activity_type: e.target.value })}
                         >
                           {ACTIVITY_TYPES.map((type) => (
-                            <option key={type} value={type}>{formatActivityType(type)}</option>
+                            <option key={type} value={type}>{getActivityTypeLabel(type, language)}</option>
                           ))}
                         </select>
                         <input
@@ -292,40 +291,40 @@ export default function RecordPage() {
                         className="input text-sm"
                         value={activityDraft.quantity}
                         onChange={(e) => setActivityDraft({ ...activityDraft, quantity: e.target.value })}
-                        placeholder="Quantity"
+                        placeholder={t('record_quantity_optional')}
                       />
                       <textarea
                         className="input text-sm resize-none"
                         rows={3}
                         value={activityDraft.notes}
                         onChange={(e) => setActivityDraft({ ...activityDraft, notes: e.target.value })}
-                        placeholder="Notes"
+                        placeholder={t('record_notes_optional')}
                       />
                       <div className="flex gap-3 text-xs font-medium">
                         <button type="button" className="text-primary hover:underline" onClick={() => saveActivity(activity.id)}>
-                          {actionLoading === `activity-save-${activity.id}` ? 'Saving...' : 'Save'}
+                          {actionLoading === `activity-save-${activity.id}` ? t('common_saving') : t('common_save')}
                         </button>
                         <button type="button" className="text-gray-500 hover:underline" onClick={() => setEditingActivityId('')}>
-                          Cancel
+                          {t('common_cancel')}
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
                       <div>
-                        <p className="text-sm font-medium text-gray-800 capitalize">{formatActivityType(activity.activity_type)}</p>
+                        <p className="text-sm font-medium text-gray-800">{getActivityTypeLabel(activity.activity_type, language)}</p>
                         <p className="text-xs text-gray-400">
-                          {formatCropLabel(crop)} - {new Date(activity.activity_date).toLocaleDateString('en-RW', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {formatCropLabel(crop)} - {formatLocalizedDate(activity.activity_date, language, { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
-                        {activity.quantity && <p className="text-xs text-gray-500 mt-1">Quantity: {activity.quantity}</p>}
+                        {activity.quantity && <p className="text-xs text-gray-500 mt-1">{t('record_quantity_prefix')}: {activity.quantity}</p>}
                         {activity.notes && <p className="text-xs text-gray-500 mt-1">{activity.notes}</p>}
                       </div>
                       <div className="flex gap-3 text-xs font-medium">
                         <button type="button" className="text-primary hover:underline" onClick={() => startActivityEdit(activity)}>
-                          Edit
+                          {t('common_edit')}
                         </button>
                         <button type="button" className="text-red-500 hover:underline" onClick={() => deleteActivity(activity)}>
-                          {actionLoading === `activity-delete-${activity.id}` ? 'Deleting...' : 'Delete'}
+                          {actionLoading === `activity-delete-${activity.id}` ? t('common_deleting') : t('common_delete')}
                         </button>
                       </div>
                     </>

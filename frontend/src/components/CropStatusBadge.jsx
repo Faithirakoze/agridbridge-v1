@@ -1,15 +1,20 @@
+import { getCropStatusLabel } from '../i18n';
+import { useStore } from '../store/useStore';
+
 const STATUS = {
-  seedling:  { bg: 'bg-blue-50',  text: 'text-blue-700',  label: 'Seedling'  },
-  growing:   { bg: 'bg-green-50', text: 'text-green-700', label: 'Growing'   },
-  at_risk:   { bg: 'bg-amber-50', text: 'text-amber-700', label: 'At risk'   },
-  harvested: { bg: 'bg-gray-100', text: 'text-gray-600',  label: 'Harvested' },
+  seedling:  { bg: 'bg-blue-50',  text: 'text-blue-700' },
+  growing:   { bg: 'bg-green-50', text: 'text-green-700' },
+  at_risk:   { bg: 'bg-amber-50', text: 'text-amber-700' },
+  harvested: { bg: 'bg-gray-100', text: 'text-gray-600' },
 };
 
 export default function CropStatusBadge({ status = 'seedling' }) {
-  const s = STATUS[status] || STATUS.seedling;
+  const language = useStore((s) => s.language);
+  const selectedStatus = STATUS[status] || STATUS.seedling;
+
   return (
-    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.bg} ${s.text}`}>
-      {s.label}
+    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${selectedStatus.bg} ${selectedStatus.text}`}>
+      {getCropStatusLabel(status, language)}
     </span>
   );
 }

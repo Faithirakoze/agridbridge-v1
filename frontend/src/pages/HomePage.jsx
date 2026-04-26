@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
+import client from '../api/client';
 import AlertCard from '../components/AlertCard';
 import { AlertIcon, CropsIcon, FarmsIcon, HomeIcon } from '../components/AppIcon';
+import { createTranslator, getCropTypeLabel } from '../i18n';
 import { useStore } from '../store/useStore';
-import client from '../api/client';
-
-function formatCropName(cropType) {
-  return cropType.replace(/_/g, ' ');
-}
 
 function getSeasonCounts(crops) {
   return crops.reduce((summary, crop) => {
@@ -20,9 +17,9 @@ function getSeasonCounts(crops) {
   }, { planting: 0, growing: 0, harvested: 0 });
 }
 
-function getSeasonStatusSummary(crops) {
+function getSeasonStatusSummary(crops, t) {
   const counts = getSeasonCounts(crops);
-  return `P ${counts.planting} | G ${counts.growing} | H ${counts.harvested}`;
+  return `${t('home_planting_short')} ${counts.planting} | ${t('home_growing_short')} ${counts.growing} | ${t('home_harvesting_short')} ${counts.harvested}`;
 }
 
 function getCropBreakdown(crops) {
@@ -45,6 +42,7 @@ function getCropBreakdown(crops) {
 
 export default function HomePage() {
   const farmer = useStore((s) => s.farmer);
+  const language = useStore((s) => s.language);
   const farms = useStore((s) => s.farms);
   const crops = useStore((s) => s.crops);
   const setFarms = useStore((s) => s.setFarms);
@@ -52,6 +50,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
+  const t = createTranslator(language);
 
   useEffect(() => {
     Promise.allSettled([client.get('/farms'), client.get('/crops'), client.get('/alerts')])
@@ -84,11 +83,11 @@ export default function HomePage() {
       });
   }, [setCrops, setFarms]);
 
-  const firstName = farmer?.name?.split(' ')[0] || 'Farmer';
+  const firstName = farmer?.name?.split(' ')[0] || t('home_farmer_fallback');
   const totalPlots = crops.length;
   const plantedArea = crops.reduce((sum, crop) => sum + (crop.area_ha || 0), 0);
   const cropTypes = new Set(crops.map((crop) => crop.crop_type)).size;
-  const seasonStatus = getSeasonStatusSummary(crops);
+  const seasonStatus = getSeasonStatusSummary(crops, t);
   const seasonCounts = getSeasonCounts(crops);
   const cropBreakdown = getCropBreakdown(crops);
   const maxCropArea = Math.max(...cropBreakdown.map((crop) => crop.area), 1);
@@ -102,9 +101,9 @@ export default function HomePage() {
               <HomeIcon className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Muraho, {firstName}</p>
-              <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
-              <p className="text-sm text-gray-500 mt-1">A quick view of your farms, crops, season progress, and alerts.</p>
+              <p className="text-xs text-gray-400">{t('home_hello', { name: firstName })}</p>
+              <h1 className="text-xl font-semibold text-gray-800">{t('home_dashboard')}</h1>
+              <p className="text-sm text-gray-500 mt-1">{t('home_quick_view')}</p>
             </div>
           </div>
           <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-primary font-semibold flex-shrink-0">
@@ -129,25 +128,25 @@ export default function HomePage() {
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3">
               <FarmsIcon className="h-5 w-5" />
             </div>
-            <p className="text-xs text-gray-400 mb-1">Farms / plots</p>
+            <p className="text-xs text-gray-400 mb-1">{t('home_farms_plots')}</p>
             <p className="text-xl font-semibold text-gray-800">{farms.length} / {totalPlots}</p>
-            <p className="text-xs text-gray-400">Total registered fields</p>
+            <p className="text-xs text-gray-400">{t('home_total_registered_fields')}</p>
           </div>
           <div className="card">
             <div className="w-10 h-10 rounded-2xl bg-lime-50 text-lime-700 flex items-center justify-center mb-3">
               <CropsIcon className="h-5 w-5" />
             </div>
-            <p className="text-xs text-gray-400 mb-1">Crops planted</p>
+            <p className="text-xs text-gray-400 mb-1">{t('home_crops_planted')}</p>
             <p className="text-xl font-semibold text-gray-800">{cropTypes}</p>
-            <p className="text-xs text-gray-400">{plantedArea.toFixed(1)} ha under crops</p>
+            <p className="text-xs text-gray-400">{t('home_ha_under_crops', { area: plantedArea.toFixed(1) })}</p>
           </div>
           <div className="card">
             <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center mb-3">
               <AlertIcon className="h-5 w-5" />
             </div>
-            <p className="text-xs text-gray-400 mb-1">Season status</p>
+            <p className="text-xs text-gray-400 mb-1">{t('home_season_status')}</p>
             <p className="text-base font-semibold text-gray-800">{seasonStatus}</p>
-            <p className="text-xs text-gray-400">Planting, growing, harvesting</p>
+            <p className="text-xs text-gray-400">{t('home_season_status_hint')}</p>
           </div>
         </div>
       )}
@@ -160,8 +159,8 @@ export default function HomePage() {
                 <CropsIcon className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Crop coverage</p>
-                <p className="text-xs text-gray-400">Top planted crops by acreage</p>
+                <p className="text-sm font-semibold text-gray-800">{t('home_crop_coverage')}</p>
+                <p className="text-xs text-gray-400">{t('home_top_planted')}</p>
               </div>
             </div>
 
@@ -170,7 +169,7 @@ export default function HomePage() {
                 {cropBreakdown.map((crop) => (
                   <div key={crop.cropType}>
                     <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="text-gray-600 capitalize">{formatCropName(crop.cropType)}</span>
+                      <span className="text-gray-600 capitalize">{getCropTypeLabel(crop.cropType, language)}</span>
                       <span className="text-gray-400">{crop.area.toFixed(1)} ha</span>
                     </div>
                     <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -183,7 +182,7 @@ export default function HomePage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">Add crops to see your planted-area breakdown.</p>
+              <p className="text-sm text-gray-500">{t('home_no_crop_breakdown')}</p>
             )}
           </div>
 
@@ -193,16 +192,16 @@ export default function HomePage() {
                 <AlertIcon className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Season flow</p>
-                <p className="text-xs text-gray-400">How your plots are moving this season</p>
+                <p className="text-sm font-semibold text-gray-800">{t('home_season_flow')}</p>
+                <p className="text-xs text-gray-400">{t('home_how_plots_move')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { key: 'planting', label: 'Planting', value: seasonCounts.planting, tone: 'from-amber-400 to-orange-500' },
-                { key: 'growing', label: 'Growing', value: seasonCounts.growing, tone: 'from-emerald-400 to-green-600' },
-                { key: 'harvested', label: 'Harvesting', value: seasonCounts.harvested, tone: 'from-sky-400 to-blue-600' },
+                { key: 'planting', label: t('home_planting'), value: seasonCounts.planting, tone: 'from-amber-400 to-orange-500' },
+                { key: 'growing', label: t('home_growing'), value: seasonCounts.growing, tone: 'from-emerald-400 to-green-600' },
+                { key: 'harvested', label: t('home_harvesting'), value: seasonCounts.harvested, tone: 'from-sky-400 to-blue-600' },
               ].map((item) => {
                 const total = Math.max(totalPlots, 1);
                 const height = Math.max((item.value / total) * 100, item.value > 0 ? 20 : 8);
@@ -231,8 +230,8 @@ export default function HomePage() {
             <AlertIcon className="h-4 w-4" />
           </div>
           <div>
-            <p className="section-label !mb-0">Today's alerts</p>
-            <p className="text-xs text-gray-400">Weather updates and farm advisories</p>
+            <p className="section-label !mb-0">{t('home_todays_alerts')}</p>
+            <p className="text-xs text-gray-400">{t('home_alerts_hint')}</p>
           </div>
         </div>
         {alertsLoading ? (
@@ -248,8 +247,8 @@ export default function HomePage() {
         ) : (
           <AlertCard
             type="general"
-            title="No alerts available"
-            body="We could not load weather alerts right now."
+            title={t('home_no_alerts_title')}
+            body={t('home_no_alerts_body')}
           />
         )}
       </div>
