@@ -1,0 +1,20 @@
+
+> agribridge-frontend@1.0.0 dev
+> vite --host 127.0.0.1 --port 5173
+
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m357[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m7:58:53 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/LoginPage.jsx, /src/index.css, /src/components/Layout.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/CropsPage.jsx[22m
+[2m7:59:02 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/LoginPage.jsx, /src/index.css[22m
+[2m7:59:12 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/RegisterPage.jsx, /src/index.css[22m
+[2m7:59:17 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/CropsPage.jsx, /src/components/CropStatusBadge.jsx, /src/components/AlertCard.jsx, /src/components/LanguageSwitcher.jsx[22m
+[2m8:03:03 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/CropsPage.jsx, /src/components/CropStatusBadge.jsx, /src/components/AlertCard.jsx, /src/components/LanguageSwitcher.jsx[22m
+[2m8:03:10 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/RegisterPage.jsx, /src/index.css[22m
+[2m8:06:42 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/LoginPage.jsx, /src/index.css, /src/components/Layout.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/CropsPage.jsx[22m
+[2m8:06:58 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/LoginPage.jsx, /src/index.css[22m
+[2m8:07:23 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/RegisterPage.jsx, /src/index.css[22m
+[2m8:08:16 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/CropsPage.jsx, /src/components/CropStatusBadge.jsx, /src/components/AlertCard.jsx, /src/components/LanguageSwitcher.jsx[22m
+[2m8:20:39 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/MarketPage.jsx, /src/index.css[22m
+[2m8:20:48 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/CropsPage.jsx, /src/components/CropStatusBadge.jsx, /src/components/AlertCard.jsx, /src/components/LanguageSwitcher.jsx[22m
