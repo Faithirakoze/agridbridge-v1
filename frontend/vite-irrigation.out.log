@@ -1,0 +1,15 @@
+
+> agribridge-frontend@1.0.0 dev
+> vite --host 127.0.0.1 --port 3002 --strictPort
+
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m368[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m3002[22m/[39m
+[2m4:08:32 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CropsPage.jsx, /src/index.css[22m
+[2m4:08:53 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/CropsPage.jsx, /src/components/AlertCard.jsx, /src/components/CropStatusBadge.jsx, /src/components/LanguageSwitcher.jsx[22m
+[2m4:14:48 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CropsPage.jsx, /src/index.css[22m
+[2m4:15:45 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CropsPage.jsx, /src/index.css[22m
+[2m4:16:07 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/CropsPage.jsx, /src/components/AlertCard.jsx, /src/components/CropStatusBadge.jsx, /src/components/LanguageSwitcher.jsx[22m
+[2m4:19:30 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/CropsPage.jsx, /src/index.css[22m
+[2m4:19:47 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/pages/LoginPage.jsx, /src/components/Layout.jsx, /src/pages/RegisterPage.jsx, /src/pages/FarmsPage.jsx, /src/pages/RecordPage.jsx, /src/pages/HomePage.jsx, /src/pages/MarketPage.jsx, /src/pages/CropsPage.jsx, /src/components/AlertCard.jsx, /src/components/CropStatusBadge.jsx, /src/components/LanguageSwitcher.jsx[22m
