@@ -91,3 +91,37 @@ export function WeatherIcon({ className }) {
     </Svg>
   );
 }
+
+export function FeedIcon({ className }) {
+  return (
+    <Svg className={className}>
+      <path d="M5 11h14l-1.2 8H6.2L5 11Z" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      <path d="M9 15h6" />
+      <path d="M18 6c1.5 1 2.2 2.4 2 4" />
+    </Svg>
+  );
+}
+
+export function HealthIcon({ className }) {
+  return (
+    <Svg className={className}>
+      <path d="M12 21s7-4.4 7-11a4 4 0 0 0-7-2.6A4 4 0 0 0 5 10c0 6.6 7 11 7 11Z" />
+      <path d="M12 8v6" />
+      <path d="M9 11h6" />
+    </Svg>
+  );
+}
+
+export function ProductionIcon({ className }) {
+  return (
+    <Svg className={className}>
+      <path d="M5 20V5" />
+      <path d="M5 20h15" />
+      <path d="M9 16v-5" />
+      <path d="M13 16V8" />
+      <path d="M17 16v-3" />
+      <path d="M8 5h8" />
+    </Svg>
+  );
+}

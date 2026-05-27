@@ -75,7 +75,7 @@ export default function RegisterPage() {
       });
       setFarmer(res.data.user);
       setToken(res.data.access_token);
-      navigate('/');
+      navigate('/choose-farming');
     } catch (err) {
       setError(getRequestErrorMessage(err, t('auth_create_account_error')));
     } finally {

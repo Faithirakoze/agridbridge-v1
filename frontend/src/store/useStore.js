@@ -12,6 +12,7 @@ export const useStore = create((set) => ({
   token: localStorage.getItem('access_token') || null,
   farmer: storedFarmer,
   language: storedLanguage,
+  farmingType: localStorage.getItem('farming_type') || null,
 
   setToken: (token) => {
     localStorage.setItem('access_token', token);
@@ -51,13 +52,20 @@ export const useStore = create((set) => ({
     });
   },
 
+  setFarmingType: (farmingType) => {
+    localStorage.setItem('farming_type', farmingType);
+    set({ farmingType });
+  },
+
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('farmer');
+    localStorage.removeItem('farming_type');
     set({
       token: null,
       farmer: null,
       language: normalizeLanguage(localStorage.getItem('preferred_language') || DEFAULT_LANGUAGE),
+      farmingType: null,
       farms: [],
       crops: [],
     });
